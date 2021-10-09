@@ -9,7 +9,7 @@ from models.base.object_selector import ObjectSelector
 class BlobModel(nn.Module):
     def __init__(self, selector_size: int, state_size: int):
         super().__init__()
-        self.object_selector = ObjectSelector(hidden_size=selector_size, context_size=state_size, object_size=5)
+        self.object_selector = ObjectSelector(hidden_size=selector_size, context_size=state_size, object_size=3)
         self.rnn = nn.GRUCell(input_size=2 + selector_size + 1 + 5 + 1, hidden_size=state_size)
         self.action_logits = nn.Linear(state_size, 5)
         self.state_value_pred = nn.Linear(state_size, 1)

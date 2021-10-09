@@ -14,14 +14,13 @@ class BlobEnv(Environment):
         self.acceleration = 1.0
         self.delta_t = 0.05
 
-        self.num_enemies = 10
-        self.num_collectibles = 10
-        self.num_blobs = 1 + self.num_enemies + self.num_collectibles
+        self.num_starting_blobs = 20 + 1
+        self.num_blobs = 0
 
         self.positions = np.zeros((0, 2))
         self.velocities = np.zeros((0, 2))
-        self.types = np.zeros((0, 2))
-        self.type_rewards = np.array([0.0, -1.0, 1.0])
+        self.types = np.zeros((0,))
+        self.type_rewards = np.array([-1.0, 1.0, 0.0])
 
         delta_v = self.delta_t * self.acceleration
         self.actions = np.array(
@@ -35,22 +34,17 @@ class BlobEnv(Environment):
         )
 
         self.colors = [
-            [255, 0, 0],
             [0, 0, 255],
             [0, 255, 0],
+            [255, 0, 0],
         ]
 
     def reset(self) -> list[np.ndarray]:
-        self.positions = np.random.uniform(low=-1.0, high=1.0, size=(self.num_blobs, 2))
+        self.num_blobs = self.num_starting_blobs
+        self.positions = np.random.uniform(low=-1.0, high=1.0, size=(self.num_starting_blobs, 2))
         self.velocities = np.zeros_like(self.positions)
-        self.types = np.concatenate(
-            [
-                [0],
-                np.full((self.num_enemies,), 1),
-                np.full((self.num_collectibles,), 2),
-            ],
-            axis=0,
-        )
+        self.types = np.random.randint(low=0, high=2, size=self.num_starting_blobs)
+        self.types[0] = 2
         return self._create_observation()
 
     def step(self, action: int) -> tuple[list[np.ndarray], float, bool, dict[str, Any]]:
@@ -71,12 +65,14 @@ class BlobEnv(Environment):
 
         contact_mask = np.linalg.norm(self.positions - self.positions[0:1], axis=-1) < 2 * self.radii
         contact_mask[0] = False
-        num_contacts = contact_mask.sum()
-        self.positions[contact_mask] = np.random.uniform(low=-1.0, high=1.0, size=(num_contacts, 2))
-        self.velocities[contact_mask] = np.zeros((num_contacts, 2))
+        reward = self.type_rewards[self.types[contact_mask]].sum()
+        no_contact_mask = ~contact_mask
+        self.num_blobs = no_contact_mask.sum()
+        self.positions = self.positions[no_contact_mask]
+        self.velocities = self.velocities[no_contact_mask]
+        self.types = self.types[no_contact_mask]
 
         observation = self._create_observation()
-        reward = self.type_rewards[self.types[contact_mask]].sum()
         done = False
 
         return observation, reward, done, {}
@@ -85,14 +81,13 @@ class BlobEnv(Environment):
         return [
             ([2], np.float32),
             ([1], np.int32),
-            ([self.num_blobs, 5], np.float32),
+            ([self.num_starting_blobs, 3], np.float32),
         ]
 
     def _create_observation(self) -> list[np.ndarray]:
         position = self.positions[0]
         relative_positions = self.positions[1:] - self.positions[0:1]
-        types = np.zeros((self.num_blobs - 1, 3))
-        types[range(self.num_blobs - 1), self.types[1:]] = 1
+        types = self.types.astype(relative_positions.dtype)[1:, None]
         objects = np.concatenate([relative_positions, types], axis=1)
         num_objects = np.array([objects.shape[0]], dtype=np.int32)
         return [position, num_objects, objects]
