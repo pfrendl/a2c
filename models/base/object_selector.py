@@ -27,13 +27,13 @@ class ObjectSelector(nn.Module):
         key, value = self.key_value(x).chunk(2, dim=1)
         query = torch.repeat_interleave(self.query(context), split_sections_ten, dim=0)
 
-        logits = (key * query).sum(dim=1, keepdim=True) / math.sqrt(self.hidden_size)
-
+        logits = torch.einsum("of,of->o", [query, key]) / math.sqrt(self.hidden_size)
         logits_list = logits.split(split_sections, dim=0)
+        weights_list = [torch.softmax(logits, dim=0) for logits in logits_list]
+
         values_list = value.split(split_sections, dim=0)
 
-        weights_list = [torch.softmax(logits, dim=0) for logits in logits_list]
-        embeddings_list = [(w * v).sum(dim=0) for w, v in zip(weights_list, values_list)]
+        embeddings_list = [torch.einsum("o,of->f", [w, v]) for w, v in zip(weights_list, values_list)]
         embedding = torch.stack(embeddings_list, dim=0)
 
         return embedding, weights_list

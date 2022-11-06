@@ -46,7 +46,7 @@ if __name__ == "__main__":
         action_probs = torch.softmax(action_logits, dim=1)
         action_idx = torch.distributions.Categorical(probs=action_probs).sample().item()
 
-        attention_weights = debug[0].cpu().detach().numpy().squeeze(-1)
+        attention_weights = debug[0].cpu().detach().numpy()
         img = env.env.visualize(resolution=600, attention_weights=attention_weights)
         cv2.imshow("display", img)
         cv2.waitKey(1)
