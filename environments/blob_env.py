@@ -19,7 +19,7 @@ class BlobEnv(Environment):
 
         self.positions = np.zeros((0, 2))
         self.velocities = np.zeros((0, 2))
-        self.types = np.zeros((0,))
+        self.types = np.zeros((0,), dtype=int)
         self.type_rewards = np.array([-1.0, 1.0, 0.0])
 
         delta_v = self.delta_t * self.acceleration

@@ -4,7 +4,6 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
-from torch_optimizer import RAdam
 
 from environments.base.environment import E
 from environments.base.monitor_env import MonitorEnv
@@ -14,7 +13,7 @@ from environments.blob_env import BlobEnv
 from models.blob_model import BlobModel
 
 
-def train(envs: list[E], model: nn.Module, args: argparse.Namespace):
+def train(envs: list[E], model: nn.Module, args: argparse.Namespace) -> None:
     state_size: int = args.state_size
     gamma: float = args.gamma
     tau: float = args.tau
@@ -28,7 +27,7 @@ def train(envs: list[E], model: nn.Module, args: argparse.Namespace):
     log_dir.mkdir(parents=True, exist_ok=False)
 
     batch_env = BatchEnv(envs=envs)
-    optimizer = RAdam(model.parameters(), lr=lr)
+    optimizer = torch.optim.RAdam(model.parameters(), lr=lr)
     initial_state = torch.zeros((num_workers, state_size), device=device)
     initial_prev_action_idx = torch.zeros((num_workers,), dtype=torch.int64, device=device)
     initial_prev_reward = torch.zeros((num_workers, 1), device=device)

@@ -1,4 +1,4 @@
-from multiprocessing.connection import Connection
+from multiprocessing.connection import PipeConnection
 from typing import Generic
 
 import numpy as np
@@ -17,7 +17,7 @@ class BatchEnv(Generic[E]):
         self.action_idx_sh = torch.zeros((0,), dtype=torch.int32)
         self.reward_sh = torch.zeros((0, 1))
         self.done_sh = torch.zeros((0, 1), dtype=torch.bool)
-        self.workers: list[tuple[Connection, Process]] = []
+        self.workers: list[tuple[PipeConnection, Process]] = []
 
     def reset(self) -> list[Tensor]:
         self.stop()
@@ -74,7 +74,7 @@ def work(
     action_idx_sh: Tensor,
     reward_sh: Tensor,
     done_sh: Tensor,
-    conn: Connection,
+    conn: PipeConnection,
     env: Environment,
 ) -> None:
     loop = True
