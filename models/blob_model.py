@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
+from models.base.layers import Linear
 from models.base.object_selector import ObjectSelector
 
 
@@ -11,8 +12,8 @@ class BlobModel(nn.Module):
         super().__init__()
         self.object_selector = ObjectSelector(hidden_size=selector_size, context_size=state_size, object_size=3)
         self.rnn = nn.GRUCell(input_size=2 + selector_size + 1 + 5 + 1, hidden_size=state_size)
-        self.action_logits = nn.Linear(state_size, 5)
-        self.state_value_pred = nn.Linear(state_size, 1)
+        self.action_logits = Linear(state_size, 5)
+        self.state_value_pred = Linear(state_size, 1)
 
     def forward(
         self,
